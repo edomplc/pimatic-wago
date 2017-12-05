@@ -1,17 +1,34 @@
-pimatic-plugin-template
+pimatic-wago
 =======================
 
-See the [development guide](http://pimatic.org/guide/development/required-skills-readings/) for
-usage.
+Adds elements to communicate with a WAGO PLC 750- series
 
-Some Tips:
+### Installation
 
-###Adding package dependencies
-* You can add other package dependencies by running `npm install something --save`. With the `--save`
-  option npm will auto add the installed dependency in your `package.json`
-* You can always install all dependencies in the package.json with `npm install`
+Simply add to pimatic config.json under plugins:
 
-###Commit your changes to git
-* Add all edited files with `git add file`. For example: `git add package.json` then commit you changes 
-  with `git commit`.
-* After that you can push you commited work to github: `git push`
+    {
+      "plugin": "wago",
+      "addressPLC": "192.168.1.3",
+      "visuFile": "v_datatransfer"
+    }
+    
+The plugin has the following configuration properties:
+
+| Property          | Default  | Type    | Description                                 |
+|:------------------|:---------|:--------|:--------------------------------------------|
+| addressPLC        | -        | String  | IP address of your PLC without http or '/'  |
+| visuFile          | -        | String  | Name of the visualization element used to transfer addresses|
+| readInterval      | 1000     | Integer | Interval for reading data from the PLC |
+
+## Device Configuration
+
+The plugin offers 3 devices:
+
+  WagoSwitch - working as a wall switch to control a given output (light)
+  WagoSensor - used to read temperatures from a given variable
+  WagoPresence - used to monitor data from presence sensors
+
+Device configuration parameters are to be found in device-config-schema-coffe under "properties" of each device
+
+
