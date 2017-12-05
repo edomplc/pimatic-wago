@@ -46,8 +46,8 @@ module.exports = (env) ->
       @id = @config.id
       @tapAddr = []
       @stateAddr = []
-      wc.getAddressAsync(@config.tapAddr).then( (addr) => @tapAddr.push(addr))
-      wc.getAddressAsync(@config.stateAddr).then( (addr) => @stateAddr.push(addr))
+      wc.getAddress(@config.tapAddr, (err, addr) => @tapAddr.push(addr))
+      wc.getAddress(@config.stateAddr, (err, addr) => @stateAddr.push(addr))
           
       @_state = lastState?.state?.value or off
       
@@ -114,7 +114,7 @@ module.exports = (env) ->
       @stateAddr = []
       @divisor = @config.divisor
       
-      wc.getAddress(@config.stateAddr, (addr) => @stateAddr.push(addr))
+      wc.getAddress(@config.stateAddr, (err, addr) => @stateAddr.push(addr))
           
       @_temperature = lastState?._temperature?.value or 0
       
@@ -149,7 +149,7 @@ module.exports = (env) ->
       @id = @config.id
       @stateAddr = []
       
-      wc.getAddress(@config.stateAddr, (addr) => @stateAddr.push(addr))
+      wc.getAddress(@config.stateAddr, (err, addr) => @stateAddr.push(addr))
           
       @_presence = lastState?._presence?.value or 0
       
