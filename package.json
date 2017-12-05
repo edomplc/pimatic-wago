@@ -1,0 +1,38 @@
+{ "name": "pimatic-wago",
+  "description": "Pimatic plugin for WAGO PLC 750- communication",
+  "author": {
+    "name": "edom",
+    "email": "edom.plc@gmail.com"
+  },
+  "main": "wago",
+  "files": [
+    "wago.coffee",
+    "README.md",
+    "wago-config-schema.coffee",
+    "device-config-schema.coffee"
+  ],
+  "version": "0.1.5",
+  "homepage": "https://github.com/edomplc/pimatic-wago",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/edomplc/pimatic-wago.git"
+  },
+  "configSchema": "wago-config-schema.coffee",
+  "dependencies": {
+    "wago-common": "^0.x"
+  },
+  "engines": {
+    "node": ">0.8.x",
+    "npm": ">1.1.x"
+  },
+  "bugs": {
+    "url": "https://github.com/edomplc/pimatic-wago/issues"
+  },
+  "keywords": [
+    "pimatic",
+    "wago",
+    "plc"
+  ],
+  "license": "gpl-3.0",
+  "devDependencies": {}
+}
