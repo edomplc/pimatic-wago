@@ -2,12 +2,13 @@
   "description": "Pimatic plugin for WAGO PLC 750- communication",
   "author": {
     "name": "edom",
-    "email": "edom.plc@gmail.com"
+    "email": "e.dom.plc@gmail.com"
   },
   "main": "wago",
   "files": [
     "wago.coffee",
     "README.md",
+    "LICENSE"
     "wago-config-schema.coffee",
     "device-config-schema.coffee"
   ],
