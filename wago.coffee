@@ -27,14 +27,16 @@ module.exports = (env) ->
         createCallback: (config, lastState) => return new WagoPresence(config, lastState)
       })
 
-      wc.init({
+      wc.initAsync({
           zipFile: @config.visuFile
           wagoAddress: @config.addressPLC
           readInterval: @config.readInterval
-        },
-        (result) ->
-          env.logger.info(if result then "Address file retrived with success" else "Addres file failed")
-      )
+        }).then( (result) ->
+          info = if result then "Address file retrived with success" else "Addres file failed"
+          env.logger.info(info)
+        ).catch( (err) ->
+          env.logger.error ("error initializing WAGO plugin: " +  error)
+        )
     
 
   class WagoSwitch extends env.devices.PowerSwitch
@@ -44,8 +46,8 @@ module.exports = (env) ->
       @id = @config.id
       @tapAddr = []
       @stateAddr = []
-      wc.getAddress(@config.tapAddr, (addr) => @tapAddr.push(addr))
-      wc.getAddress(@config.stateAddr, (addr) => @stateAddr.push(addr))
+      wc.getAddressAsync(@config.tapAddr).then( (addr) => @tapAddr.push(addr))
+      wc.getAddressAsync(@config.stateAddr).then( (addr) => @stateAddr.push(addr))
           
       @_state = lastState?.state?.value or off
       
@@ -67,7 +69,8 @@ module.exports = (env) ->
       return wc.addToReadQueueAsync(@stateAddr).then( (value) => 
           if value.constructor == Array
             value = value[0]
-
+          #if value == 'wait'
+          #  env.logger.info('WAGO plugin not ready')
           if value == '1'
             @_setState(on)
           else
@@ -82,7 +85,6 @@ module.exports = (env) ->
  
       if state == @_state 
         new Promise (resolve, reject) =>
-          # @_setState(Promise.resolve(state))
           resolve true
       else
         new Promise (resolve, reject) =>

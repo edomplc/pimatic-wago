@@ -8,11 +8,11 @@
   "files": [
     "wago.coffee",
     "README.md",
-    "LICENSE"
+    "LICENSE",
     "wago-config-schema.coffee",
     "device-config-schema.coffee"
   ],
-  "version": "0.1.5",
+  "version": "0.1.6",
   "homepage": "https://github.com/edomplc/pimatic-wago",
   "repository": {
     "type": "git",
