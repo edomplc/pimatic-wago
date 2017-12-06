@@ -26,7 +26,7 @@ module.exports = (env) ->
         configDef: deviceConfigDef.WagoPresence,
         createCallback: (config, lastState) => return new WagoPresence(config, lastState)
       })
-
+      # plugin = @
       wc.initAsync({
           zipFile: @config.visuFile
           wagoAddress: @config.addressPLC
@@ -34,10 +34,11 @@ module.exports = (env) ->
         }).then( (result) ->
           info = if result then "Address file retrived with success" else "Addres file failed"
           env.logger.info(info)
+          # plugin.emit 'initReady'
         ).catch( (err) ->
-          env.logger.error ("error initializing WAGO plugin: " +  error)
+          env.logger.error ("error initializing WAGO plugin: " +  err)
         )
-    
+      # @on('initReady', () => console.log('test'))
 
   class WagoSwitch extends env.devices.PowerSwitch
 
@@ -52,53 +53,73 @@ module.exports = (env) ->
       @_state = lastState?.state?.value or off
       
       updateValue = =>
+        clearTimeout @_updateValueTimeout if @_updateValueTimeout?
         @_updateValueTimeout = null
-        @getState().finally( =>
+        
+        @updateState().finally( =>
           @_updateValueTimeout = setTimeout(updateValue,  Math.max(1000, @config.interval));
         )
       
       super()
       updateValue()
+      
 
     destroy: () ->
+      console.log('destroying ' + @name);
       clearTimeout @_updateValueTimeout if @_updateValueTimeout?
+      
       super()
 
     
-    getState: () ->
-      return wc.addToReadQueueAsync(@stateAddr).then( (value) => 
-          if value.constructor == Array
-            value = value[0]
-          #if value == 'wait'
-          #  env.logger.info('WAGO plugin not ready')
-          if value == '1'
-            @_setState(on)
+    updateState: () ->
+      return new Promise (resolve, reject) =>
+        wc.addToReadQueue(@stateAddr, (err, value) => 
+          console.log(@name + ': ' + value);
+          if !err
+            if value.constructor == Array
+              value = value[0]
+            if value == '1'
+              @_setState(on)
+            else
+              @_setState(off)
+
+            resolve true
           else
-            @_setState(off)
-        ).catch( (error) =>
-          env.logger.error "error reading state of WAGO switch #{@name}:", error.message
-          env.logger.debug error.stack
+            if err == 'notReady' || 'adr!'
+              # ignoring other replies like: 'notReady' -for plugin not initialized or 
+              # 'adr!' for wrong value passed to the function.
+              # Both 'errors' are a consequence of plugin being not initialized....
+              # and we choose to ignore updateState() requests, which happen too early
+              
+              # @_setState(off)
+              @_setState(on)
+              resolve true
+            else
+              # this can only happen if the request() within wago-commmon's executeReadQueue() returns a wrong answer
+              env.logger.error "error reading state of WAGO switch #{@name}:", err.message
+              env.logger.debug err.stack
+              reject err
         )
+        
         
     changeStateTo: (state) ->
       assert state is on or state is off
  
-      if state == @_state 
-        new Promise (resolve, reject) =>
+      new Promise (resolve, reject) =>
+        if state == @_state 
           resolve true
-      else
-        new Promise (resolve, reject) =>
+        else
+          @_setState(state)  
           wc.tapAsync(@tapAddr).then( (reply) =>
-              if reply == 'ok'
-                @_setState(state)
-                resolve true
-              else
-                reject 'error'
-            ).catch( (error) =>
-              env.logger.debug error.stack
-              env.logger.error "error changing state of WAGO switch #{@name}:", error.message
-              reject error
-            )
+            if reply == 'ok'  
+              resolve true
+            else
+              reject 'error'
+          ).catch( (error) =>
+            env.logger.debug error.stack
+            env.logger.error "error changing state of WAGO switch #{@name}:", error.message
+            reject error
+          )
           
     _setBrightness: (bri) ->
       if bri > 0
@@ -132,15 +153,28 @@ module.exports = (env) ->
       super()
     
     getTemperature: () ->
-      return wc.addToReadQueueAsync(@stateAddr).then( (value) => 
-          if value.constructor == Array
-            value = value[0]
-          value = value / @divisor
-          @_setTemperature (value)
-        ).catch( (error) =>
-          env.logger.error "error reading state of WAGO temperature sensor #{@name}:", error.message
-          env.logger.debug error.stack
-        )  
+      return new Promise (resolve, reject) =>
+        wc.addToReadQueue(@stateAddr, (error, value) => 
+          if !error
+            if value.constructor == Array
+              value = value[0]
+            value = value / @divisor
+            @_setTemperature (value)
+            
+            resolve true
+          else
+            if error == 'notReady' || 'adr!'
+              # ignoring other replies like: 'notReady' -for plugin not initialized or 
+              # 'adr!' for wrong value passed to the function.
+              # Both 'errors' are a consequence of plugin being not initialized....
+              # and we choose to ignore getState() requests, which happen too early
+              resolve true
+            else
+              # this can only happen if the request() within wago-commmon's executeReadQueue() returns a wrong answer
+              env.logger.error "error reading state of WAGO switch #{@name}:", error.message
+              env.logger.debug error.stack
+              reject error
+        )     
         
   class WagoPresence extends env.devices.PresenceSensor
      
@@ -167,15 +201,26 @@ module.exports = (env) ->
       super()
     
     getPresence: () ->
-      return wc.addToReadQueueAsync(@stateAddr).then( (value) => 
-          if value.constructor == Array
-            value = value[0]
-
-          @_setPresence (value == '1')
-        ).catch( (error) =>
-          env.logger.error "error reading state of WAGO presence sensor #{@name}:", error.message
-          env.logger.debug error.stack
-        )
+      return new Promise (resolve, reject) =>
+        wc.addToReadQueue(@stateAddr, (error, value) => 
+          if !error
+            if value.constructor == Array
+              value = value[0]
+            @_setPresence (value == '1')
+            resolve true
+          else
+            if error == 'notReady' || 'adr!'
+              # ignoring other replies like: 'notReady' -for plugin not initialized or 
+              # 'adr!' for wrong value passed to the function.
+              # Both 'errors' are a consequence of plugin being not initialized....
+              # and we choose to ignore getState() requests, which happen too early
+              resolve true
+            else
+              # this can only happen if the request() within wago-commmon's executeReadQueue() returns a wrong answer
+              env.logger.error "error reading state of WAGO switch #{@name}:", error.message
+              env.logger.debug error.stack
+              reject error
+        )      
 
   wago = new Wago
 
