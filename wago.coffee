@@ -74,7 +74,6 @@ module.exports = (env) ->
     updateState: () ->
       return new Promise (resolve, reject) =>
         wc.addToReadQueue(@stateAddr, (err, value) => 
-          console.log(@name + ': ' + value);
           if !err
             if value.constructor == Array
               value = value[0]
